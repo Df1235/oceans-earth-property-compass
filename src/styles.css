@@ -55,7 +55,7 @@
   --secondary-foreground: oklch(0.3 0.06 245);
   --muted: oklch(0.955 0.008 230);
   --muted-foreground: oklch(0.5 0.03 245);
-  --accent: oklch(0.79 0.12 210);
+  --accent: oklch(0.8 0.08 215);
   --accent-foreground: oklch(0.22 0.05 245);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.99 0 0);
@@ -66,7 +66,7 @@
   --ink-foreground: oklch(0.96 0.01 230);
   --sand: oklch(0.96 0.012 80);
   --whatsapp: oklch(0.72 0.17 150);
-  --zone-carpet: oklch(0.79 0.12 210);
+  --zone-carpet: oklch(0.82 0.07 215);
   --zone-wall: oklch(0.5 0.08 245);
   --zone-balcony: oklch(0.8 0.12 150);
   --zone-common: oklch(0.82 0.11 80);
