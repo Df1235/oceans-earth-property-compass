@@ -22,9 +22,10 @@ export const Route = createFileRoute("/properties")({
   component: Properties,
 });
 
-function Pill({ active, children, ...p }: { active: boolean; children: React.ReactNode } & React.ComponentProps<typeof Link>) {
+type S = z.infer<typeof search>;
+function Pill({ active, children, search }: { active: boolean; children: React.ReactNode; search: S }) {
   return (
-    <Link {...p} className={`rounded-sm border px-4 py-2 text-sm ${active ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary"}`}>
+    <Link to="/properties" search={search} className={`rounded-sm border px-4 py-2 text-sm ${active ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary"}`}>
       {children}
     </Link>
   );
@@ -38,12 +39,12 @@ function Properties() {
       <PageHero eyebrow="Properties" title={category ?? "All properties"} text="Thoughtfully selected for quality, location and long-term potential." />
       <section className="mx-auto max-w-7xl px-5 py-12">
         <div className="flex flex-wrap items-center gap-2">
-          <Pill to="/properties" search={{ type }} active={!category}>All</Pill>
+          <Pill search={{ type }} active={!category}>All</Pill>
           {CATEGORIES.map((c) => (
             <Pill key={c} to="/properties" search={{ category: c, type }} active={category === c}>{c}</Pill>
           ))}
           <span className="mx-3 hidden h-6 w-px bg-border md:block" />
-          <Pill to="/properties" search={{ category }} active={!type}>Any</Pill>
+          <Pill search={{ category }} active={!type}>Any</Pill>
           {LISTING_TYPES.map((t) => (
             <Pill key={t} to="/properties" search={{ category, type: t }} active={type === t}>{t}</Pill>
           ))}

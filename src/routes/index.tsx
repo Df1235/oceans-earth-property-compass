@@ -29,7 +29,7 @@ function HeroSlider() {
     const t = setInterval(() => setI((x) => (x + 1) % HERO_SLIDES.length), 6500);
     return () => clearInterval(t);
   }, []);
-  const s = HERO_SLIDES[i];
+  const s = HERO_SLIDES[i]!;
   return (
     <section className="relative h-[92vh] min-h-[560px] overflow-hidden bg-ink">
       {HERO_SLIDES.map((sl, k) => (

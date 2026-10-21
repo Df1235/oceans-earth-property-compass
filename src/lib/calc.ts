@@ -11,7 +11,7 @@ export const STAMP_RATES: Record<string, { male: number; female: number; joint: 
 export type Buyer = "male" | "female" | "joint";
 
 export function stampDuty(value: number, state: string, buyer: Buyer) {
-  const r = STAMP_RATES[state];
+  const r = STAMP_RATES[state] ?? STAMP_RATES.Delhi!;
   const duty = (value * r[buyer]) / 100;
   const registration = (value * r.registration) / 100;
   return { rate: r[buyer], duty, registration, total: duty + registration };
@@ -48,7 +48,7 @@ export const AREA_UNITS: Record<string, number> = {
 };
 
 export function convertArea(value: number, from: string, to: string) {
-  return (value * AREA_UNITS[from]) / AREA_UNITS[to];
+  return (value * (AREA_UNITS[from] ?? 1)) / (AREA_UNITS[to] ?? 1);
 }
 
 export function inr(n: number) {
