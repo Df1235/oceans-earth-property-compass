@@ -11,7 +11,7 @@ export const STAMP_RATES: Record<string, { male: number; female: number; joint: 
 export type Buyer = "male" | "female" | "joint";
 
 export function stampDuty(value: number, state: string, buyer: Buyer) {
-  const r = STAMP_RATES[state] ?? STAMP_RATES.Delhi!;
+  const r = STAMP_RATES[state] ?? STAMP_RATES["Delhi"]!;
   const duty = (value * r[buyer]) / 100;
   const registration = (value * r.registration) / 100;
   return { rate: r[buyer], duty, registration, total: duty + registration };

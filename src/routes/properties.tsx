@@ -41,12 +41,12 @@ function Properties() {
         <div className="flex flex-wrap items-center gap-2">
           <Pill search={{ type }} active={!category}>All</Pill>
           {CATEGORIES.map((c) => (
-            <Pill key={c} to="/properties" search={{ category: c, type }} active={category === c}>{c}</Pill>
+            <Pill key={c} search={{ category: c, type }} active={category === c}>{c}</Pill>
           ))}
           <span className="mx-3 hidden h-6 w-px bg-border md:block" />
           <Pill search={{ category }} active={!type}>Any</Pill>
           {LISTING_TYPES.map((t) => (
-            <Pill key={t} to="/properties" search={{ category, type: t }} active={type === t}>{t}</Pill>
+            <Pill key={t} search={{ category, type: t }} active={type === t}>{t}</Pill>
           ))}
         </div>
         <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
