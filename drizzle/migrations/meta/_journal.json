@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792745003747,
+      "tag": "0000_property_management_and_enquiries",
+      "breakpoints": true
+    }
+  ]
 }
