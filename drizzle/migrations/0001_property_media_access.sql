@@ -1,0 +1,3 @@
+CREATE POLICY "Read catalogue media" ON storage.objects FOR SELECT TO anon,authenticated USING(bucket_id='property-media');
+CREATE POLICY "Admins upload catalogue media" ON storage.objects FOR INSERT TO authenticated WITH CHECK(bucket_id='property-media' AND public.has_role(auth.uid(),'admin'));
+CREATE POLICY "Admins remove catalogue media" ON storage.objects FOR DELETE TO authenticated USING(bucket_id='property-media' AND public.has_role(auth.uid(),'admin'));

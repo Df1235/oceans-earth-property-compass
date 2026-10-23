@@ -5,13 +5,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { LeadForm } from "@/components/LeadForm";
 import { KnowYourSpace } from "@/components/KnowYourSpace";
 import { SectionHead } from "@/components/SectionHead";
-import { HERO_SLIDES, PROJECTS, SITE } from "@/lib/site";
+import { HERO_SLIDES, SITE } from "@/lib/site";
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { catalogueOptions } from '@/lib/catalogue';
 import iconWhite from "@/assets/icon-white.png";
 import interior from "@/assets/interior.jpg";
 import heroCommercial from "@/assets/hero-commercial.jpg";
 import plots from "@/assets/plots.jpg";
 
 export const Route = createFileRoute("/")({
+  loader:({context})=>context.queryClient.ensureQueryData(catalogueOptions),
   head: () => ({
     meta: [
       { title: "Oceans & Earth Realty — Homes, Commercial & Plots in Delhi NCR" },
@@ -29,7 +32,8 @@ function HeroSlider() {
     const t = setInterval(() => setI((x) => (x + 1) % HERO_SLIDES.length), 6500);
     return () => clearInterval(t);
   }, []);
-  const s = HERO_SLIDES[i]!;
+  const s = HERO_SLIDES[i];
+  if (!s) return null;
   return (
     <section className="relative h-[92vh] min-h-[560px] overflow-hidden bg-ink">
       {HERO_SLIDES.map((sl, k) => (
@@ -74,7 +78,7 @@ function LeadPopup() {
         <DialogHeader>
           <p className="eyebrow text-primary">Find your shore</p>
           <DialogTitle className="font-display text-3xl font-normal">Tell us what you're looking for</DialogTitle>
-          <DialogDescription>Share a few details and {SITE.owner} will personally get back to you.</DialogDescription>
+          <DialogDescription>Share a few details our team will get back to you.</DialogDescription>
         </DialogHeader>
         <LeadForm context="Homepage pop-up" submitLabel="Request a callback" onDone={() => setOpen(false)} />
       </DialogContent>
@@ -89,6 +93,7 @@ const CATS = [
 ] as const;
 
 function Index() {
+  const {data:{featured:PROJECTS}}=useSuspenseQuery(catalogueOptions);
   return (
     <>
       <HeroSlider />

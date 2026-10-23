@@ -1,20 +1,12 @@
 import { useState } from "react";
-import { z } from "zod";
+import { useServerFn } from '@tanstack/react-start';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CATEGORIES, waLink } from "@/lib/site";
+import { CATEGORIES } from "@/lib/site";
+import { leadSchema as schema, BUDGETS } from '@/lib/forms';
+import { submitEnquiry } from '@/lib/catalogue.functions';
 
-const schema = z.object({
-  name: z.string().trim().min(2, "Please enter your name").max(80),
-  phone: z.string().trim().regex(/^[+\d\s-]{10,15}$/, "Enter a valid phone number"),
-  email: z.string().trim().email("Enter a valid email").max(120),
-  category: z.enum(CATEGORIES),
-  budget: z.string().min(1, "Select a budget"),
-  city: z.string().trim().max(60).optional(),
-});
-
-const BUDGETS = ["Under ₹50 L", "₹50 L – 1 Cr", "₹1 – 3 Cr", "₹3 – 5 Cr", "Above ₹5 Cr"];
 const selectCls =
   "flex h-10 w-full rounded-md border border-input bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
@@ -27,12 +19,17 @@ export function LeadForm({
   context: string;
   submitLabel?: string;
   defaultCategory?: (typeof CATEGORIES)[number];
-  onDone?: () => void;
+  onDone?: () => void | Promise<void>;
 }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy,setBusy]=useState(false);
+  const [saved,setSaved]=useState(false);
+  const save=useServerFn(submitEnquiry);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if(busy) return;
+    const form=e.currentTarget;
     const raw = Object.fromEntries(new FormData(e.currentTarget));
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {
@@ -42,10 +39,12 @@ export function LeadForm({
       return;
     }
     setErrors({});
-    const d = parsed.data;
-    const msg = `New enquiry (${context})\nName: ${d.name}\nPhone: ${d.phone}\nEmail: ${d.email}\nInterested in: ${d.category}\nBudget: ${d.budget}${d.city ? `\nPreferred city: ${d.city}` : ""}`;
-    window.open(waLink(msg), "_blank", "noopener");
-    onDone?.();
+    setBusy(true); setSaved(false);
+    try {
+      await save({data:{...parsed.data,context}});
+      setSaved(true); form.reset(); await onDone?.();
+    } catch(error) { setErrors({form:error instanceof Error?error.message:'Please try again.'}); }
+    finally {setBusy(false);}
   }
 
   const err = (k: string) => errors[k] && <p className="mt-1 text-xs text-destructive">{errors[k]}</p>;
@@ -91,8 +90,9 @@ export function LeadForm({
         <Label htmlFor="lf-city">Preferred city (optional)</Label>
         <Input id="lf-city" name="city" className="mt-1" />
       </div>
-      <Button type="submit" size="lg" className="sm:col-span-2 mt-2 tracking-widest uppercase text-xs">
-        {submitLabel}
+      <div className="sm:col-span-2" aria-live="polite">{err('form')}{saved && <p className="text-sm text-primary">Thank you. Your enquiry has been received.</p>}</div>
+      <Button disabled={busy} type="submit" size="lg" className="sm:col-span-2 mt-2 tracking-widest uppercase text-xs">
+        {busy?'Submitting…':submitLabel}
       </Button>
     </form>
   );

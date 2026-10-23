@@ -14,16 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      enquiries: {
+        Row: {
+          budget: string
+          category: string
+          city: string
+          context: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          budget: string
+          category: string
+          city?: string
+          context: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone: string
+        }
+        Update: {
+          budget?: string
+          category?: string
+          city?: string
+          context?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          area: string
+          beds: number | null
+          brochure_url: string
+          category: string
+          config: string
+          created_at: string
+          featured: boolean
+          highlights: string[]
+          id: string
+          image: string
+          location: string
+          price: string
+          property_type: string
+          slug: string
+          status: string
+          summary: string
+          title: string
+          type: string
+        }
+        Insert: {
+          area: string
+          beds?: number | null
+          brochure_url?: string
+          category: string
+          config?: string
+          created_at?: string
+          featured?: boolean
+          highlights?: string[]
+          id?: string
+          image: string
+          location: string
+          price: string
+          property_type: string
+          slug: string
+          status?: string
+          summary?: string
+          title: string
+          type: string
+        }
+        Update: {
+          area?: string
+          beds?: number | null
+          brochure_url?: string
+          category?: string
+          config?: string
+          created_at?: string
+          featured?: boolean
+          highlights?: string[]
+          id?: string
+          image?: string
+          location?: string
+          price?: string
+          property_type?: string
+          slug?: string
+          status?: string
+          summary?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +272,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+    },
   },
 } as const

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHero } from "@/components/SectionHead";
 import { SITE } from "@/lib/site";
-import villas from "@/assets/villas.jpg";
+import founder from "@/assets/founder.jpg.asset.json";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/about")({
 
 function About() {
   return (
-    <>
+    <div className="about-page">
       <PageHero eyebrow="About us" title="About Oceans & Earth Realty" />
       <section className="mx-auto grid max-w-7xl gap-14 px-5 py-20 md:grid-cols-2">
         <div className="space-y-6 text-lg leading-relaxed text-muted-foreground">
@@ -31,7 +31,7 @@ function About() {
           <p className="font-display text-xl text-primary">Oceans & Earth Realty — Where Dreams Find Their Shore.</p>
         </div>
         <div>
-          <img src={villas} alt="Premium villas" loading="lazy" className="aspect-[4/5] w-full rounded-md object-cover" />
+          <img src={founder.url} alt={`${SITE.owner}, founder of Oceans & Earth Realty`} className="aspect-[2/3] w-full rounded-md object-cover" />
           <div className="-mt-16 ml-8 rounded-md bg-ink p-8 text-ink-foreground shadow-soft">
             <p className="eyebrow opacity-70">Founder</p>
             <p className="mt-2 font-display text-3xl">{SITE.owner}</p>
@@ -39,6 +39,6 @@ function About() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

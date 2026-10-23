@@ -91,6 +91,12 @@
   }
 }
 
+.about-page h1, .about-page h2, .about-page h3, .about-page .font-display {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
 @utility bg-hero-overlay {
   background: var(--gradient-hero);
 }

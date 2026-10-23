@@ -3,10 +3,15 @@ import { useState } from "react";
 import { Check, Download, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LeadForm } from "@/components/LeadForm";
-import { PROJECTS, waLink } from "@/lib/site";
+import { waLink } from "@/lib/site";
+import { catalogueOptions } from '@/lib/catalogue';
+import { getBrochure } from '@/lib/catalogue.functions';
+import { useServerFn } from '@tanstack/react-start';
+import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute("/projects/$slug")({
-  loader: ({ params }) => {
+  loader: async ({ params,context }) => {
+    const {projects:PROJECTS}=await context.queryClient.ensureQueryData(catalogueOptions);
     const project = PROJECTS.find((p) => p.slug === params.slug);
     if (!project) throw notFound();
     return { project };
@@ -33,10 +38,12 @@ export const Route = createFileRoute("/projects/$slug")({
 function ProjectPage() {
   const { project: p } = Route.useLoaderData();
   const [open, setOpen] = useState(false);
+  const brochure=useServerFn(getBrochure);
 
-  function download() {
+  async function download() {
+    const result=await brochure({data:{slug:p.slug}});
     const a = document.createElement("a");
-    a.href = `/downloads/${p.slug}.pdf`;
+    a.href = result.url;
     a.download = `${p.slug}-brochure.pdf`;
     document.body.appendChild(a);
     a.click();
@@ -69,9 +76,9 @@ function ProjectPage() {
           <p className="eyebrow text-muted-foreground">Starting price</p>
           <p className="mt-2 font-display text-4xl text-primary">{p.price}</p>
           <p className="mt-4 text-sm text-muted-foreground">{p.config}</p>
-          <button onClick={() => setOpen(true)} className="eyebrow mt-8 flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-6 py-4 text-primary-foreground">
+          <Button onClick={() => setOpen(true)} className="eyebrow mt-8 w-full" size="lg">
             <Download className="h-4 w-4" /> Download brochure
-          </button>
+          </Button>
           <a href={waLink(`Hi, I'd like to know more about ${p.name}.`)} target="_blank" rel="noopener noreferrer" className="eyebrow mt-3 flex w-full items-center justify-center rounded-sm border border-primary px-6 py-4 text-primary">
             Enquire on WhatsApp
           </a>

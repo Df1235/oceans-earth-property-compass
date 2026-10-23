@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { PageHero } from "@/components/SectionHead";
 import { PropertyCard } from "@/components/PropertyCard";
-import { CATEGORIES, LISTINGS, LISTING_TYPES } from "@/lib/site";
+import { CATEGORIES, LISTING_TYPES } from "@/lib/site";
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { catalogueOptions } from '@/lib/catalogue';
 
 const search = z.object({
   category: z.enum(CATEGORIES).optional(),
@@ -10,6 +12,7 @@ const search = z.object({
 });
 
 export const Route = createFileRoute("/properties")({
+  loader:({context})=>context.queryClient.ensureQueryData(catalogueOptions),
   validateSearch: (s) => search.parse(s),
   head: () => ({
     meta: [
@@ -33,6 +36,7 @@ function Pill({ active, children, search }: { active: boolean; children: React.R
 
 function Properties() {
   const { category, type } = Route.useSearch();
+  const {data:{listings:LISTINGS}}=useSuspenseQuery(catalogueOptions);
   const list = LISTINGS.filter((l) => (!category || l.category === category) && (!type || l.type === type));
   return (
     <>
