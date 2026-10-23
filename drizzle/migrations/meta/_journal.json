@@ -8,6 +8,13 @@
       "when": 1792745003747,
       "tag": "0000_property_management_and_enquiries",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792745057123,
+      "tag": "0001_property_media_access",
+      "breakpoints": true
     }
   ]
 }
