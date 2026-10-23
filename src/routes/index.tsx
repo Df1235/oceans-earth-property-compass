@@ -29,7 +29,8 @@ function HeroSlider() {
     const t = setInterval(() => setI((x) => (x + 1) % HERO_SLIDES.length), 6500);
     return () => clearInterval(t);
   }, []);
-  const s = HERO_SLIDES[i]!;
+  const s = HERO_SLIDES[i];
+  if (!s) return null;
   return (
     <section className="relative h-[92vh] min-h-[560px] overflow-hidden bg-ink">
       {HERO_SLIDES.map((sl, k) => (
@@ -74,7 +75,7 @@ function LeadPopup() {
         <DialogHeader>
           <p className="eyebrow text-primary">Find your shore</p>
           <DialogTitle className="font-display text-3xl font-normal">Tell us what you're looking for</DialogTitle>
-          <DialogDescription>Share a few details and {SITE.owner} will personally get back to you.</DialogDescription>
+          <DialogDescription>Share a few details our team will get back to you.</DialogDescription>
         </DialogHeader>
         <LeadForm context="Homepage pop-up" submitLabel="Request a callback" onDone={() => setOpen(false)} />
       </DialogContent>

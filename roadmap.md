@@ -1,0 +1,5 @@
+- [ ] Update founder photo, About font and enquiry pop-up wording.
+- [ ] Store all enquiry forms in Cloud and preserve brochure download after success.
+- [ ] Add secured administrator sign-in and enquiry/property management.
+- [ ] Connect public property/project screens to managed properties.
+- [ ] Verify submissions, admin access and property add/remove.
