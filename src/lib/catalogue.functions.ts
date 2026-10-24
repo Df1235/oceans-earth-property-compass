@@ -67,3 +67,32 @@ export const getBrochure=createServerFn({method:'POST'}).inputValidator(input=>z
   if(signed.error) throw new Error('Brochure unavailable');
   return {url:signed.data.signedUrl};
 });
+
+export const updateProperty=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>z.object({id:z.string().uuid(),property:propertySchema}).parse(input)).handler(async({data,context})=>{
+  const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
+  if(role.error || !role.data) throw new Error('Administrator access required');
+  const {error}=await context.supabase.from('properties').update(data.property).eq('id',data.id);
+  if(error) throw new Error(error.code==='23505'?'This property address already exists. Change the slug.':'Unable to save changes');
+  return {success:true};
+});
+
+const uploadSchema=z.object({
+  kind:z.enum(['photo','brochure']),
+  fileName:z.string().min(1).max(200),
+  contentType:z.string().min(1).max(100),
+  base64:z.string().min(1).max(21_000_000),
+});
+export const uploadPropertyFile=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>uploadSchema.parse(input)).handler(async({data,context})=>{
+  const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
+  if(role.error || !role.data) throw new Error('Administrator access required');
+  const allowed=data.kind==='photo'?['image/jpeg','image/png','image/webp']:['application/pdf'];
+  if(!allowed.includes(data.contentType)) throw new Error(data.kind==='photo'?'Photo must be a JPG, PNG or WebP image':'Brochure must be a PDF');
+  const bytes=Uint8Array.from(atob(data.base64),c=>c.charCodeAt(0));
+  if(bytes.byteLength>15_000_000) throw new Error('File must be under 15 MB');
+  const safe=data.fileName.toLowerCase().replace(/[^a-z0-9.]+/g,'-').slice(-60);
+  const path=`${data.kind==='photo'?'photos':'brochures'}/${crypto.randomUUID()}-${safe}`;
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+  const {error}=await supabaseAdmin.storage.from('property-media').upload(path,bytes,{contentType:data.contentType});
+  if(error) throw new Error('Upload failed. Please try again.');
+  return {ref:`media:${path}`};
+});
