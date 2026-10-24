@@ -23,7 +23,7 @@ export const getCatalogue = createServerFn({ method: 'GET' }).handler(async () =
     }
     return {...row,image};
   }));
-  const listings:Listing[]=rows.map(r=>({id:r.id,title:r.title,category:r.category as Listing['category'],type:r.type as Listing['type'],propertyType:r.property_type,location:r.location,price:r.price,beds:r.beds ?? undefined,area:r.area,image:r.image,projectSlug:r.slug}));
+  const listings:Listing[]=rows.map(r=>({id:r.id,title:r.title,category:r.category as Listing['category'],type:r.type as Listing['type'],propertyType:r.property_type,location:r.location,price:r.price,...(r.beds!=null?{beds:r.beds}:{}),area:r.area,image:r.image,projectSlug:r.slug}));
   const projects:(Project & {brochureUrl:string})[]=rows.map(r=>({slug:r.slug,name:r.title,category:r.category as Project['category'],type:r.type as Project['type'],location:r.location,price:r.price,config:r.config || r.area,status:r.status,image:r.image,summary:r.summary,highlights:r.highlights,brochureUrl:r.brochure_url}));
   return { listings,projects,featured:projects.filter(p=>rows.find(r=>r.slug===p.slug)?.featured) };
 });
@@ -66,4 +66,33 @@ export const getBrochure=createServerFn({method:'POST'}).inputValidator(input=>z
   const signed=await supabaseAdmin.storage.from('property-media').createSignedUrl(row.brochure_url.slice(6),300);
   if(signed.error) throw new Error('Brochure unavailable');
   return {url:signed.data.signedUrl};
+});
+
+export const updateProperty=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>z.object({id:z.string().uuid(),property:propertySchema}).parse(input)).handler(async({data,context})=>{
+  const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
+  if(role.error || !role.data) throw new Error('Administrator access required');
+  const {error}=await context.supabase.from('properties').update(data.property).eq('id',data.id);
+  if(error) throw new Error(error.code==='23505'?'This property address already exists. Change the slug.':'Unable to save changes');
+  return {success:true};
+});
+
+const uploadSchema=z.object({
+  kind:z.enum(['photo','brochure']),
+  fileName:z.string().min(1).max(200),
+  contentType:z.string().min(1).max(100),
+  base64:z.string().min(1).max(21_000_000),
+});
+export const uploadPropertyFile=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>uploadSchema.parse(input)).handler(async({data,context})=>{
+  const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
+  if(role.error || !role.data) throw new Error('Administrator access required');
+  const allowed=data.kind==='photo'?['image/jpeg','image/png','image/webp']:['application/pdf'];
+  if(!allowed.includes(data.contentType)) throw new Error(data.kind==='photo'?'Photo must be a JPG, PNG or WebP image':'Brochure must be a PDF');
+  const bytes=Uint8Array.from(atob(data.base64),c=>c.charCodeAt(0));
+  if(bytes.byteLength>15_000_000) throw new Error('File must be under 15 MB');
+  const safe=data.fileName.toLowerCase().replace(/[^a-z0-9.]+/g,'-').slice(-60);
+  const path=`${data.kind==='photo'?'photos':'brochures'}/${crypto.randomUUID()}-${safe}`;
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+  const {error}=await supabaseAdmin.storage.from('property-media').upload(path,bytes,{contentType:data.contentType});
+  if(error) throw new Error('Upload failed. Please try again.');
+  return {ref:`media:${path}`};
 });

@@ -119,16 +119,17 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useLocation({ select: (l) => l.pathname });
+  const bare = pathname === "/auth" || pathname.startsWith("/admin");
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Header transparent={pathname === "/"} />
+      {!bare && <Header transparent={pathname === "/"} />}
       <main>
         <Outlet />
       </main>
-      <Footer />
-      <WhatsAppFab />
+      {!bare && <Footer />}
+      {!bare && <WhatsAppFab />}
     </QueryClientProvider>
   );
 }
