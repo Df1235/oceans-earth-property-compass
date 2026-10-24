@@ -25,7 +25,9 @@ const makeId = () => ++nextId;
 
 export function AiChat() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([{ id: makeId(), from: "bot", text: GREETING }]);
+  const [messages, setMessages] = useState<Message[]>([
+    { id: makeId(), from: "bot", text: GREETING },
+  ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -113,7 +115,12 @@ export function AiChat() {
             </button>
           </div>
 
-          <div ref={logRef} role="log" aria-live="polite" className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div
+            ref={logRef}
+            role="log"
+            aria-live="polite"
+            className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
+          >
             {messages.map((m) => (
               <div
                 key={m.id}
@@ -128,7 +135,10 @@ export function AiChat() {
             ))}
 
             {typing && (
-              <div className="mr-auto flex max-w-[85%] items-center gap-1 rounded-md bg-muted px-3 py-2" aria-label="Assistant is typing">
+              <div
+                className="mr-auto flex max-w-[85%] items-center gap-1 rounded-md bg-muted px-3 py-2"
+                aria-label="Assistant is typing"
+              >
                 <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s] motion-reduce:animate-none" />
                 <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s] motion-reduce:animate-none" />
                 <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground motion-reduce:animate-none" />
