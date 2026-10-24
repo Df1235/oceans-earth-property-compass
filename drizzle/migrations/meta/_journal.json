@@ -15,6 +15,13 @@
       "when": 1792745057123,
       "tag": "0001_property_media_access",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792819955180,
+      "tag": "0002_seed_properties_and_admin_trigger",
+      "breakpoints": true
     }
   ]
 }
