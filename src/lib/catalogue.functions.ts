@@ -7,7 +7,8 @@ import type { Listing, Project } from './site';
 import { leadSchema, propertySchema } from './forms';
 
 export const getCatalogue = createServerFn({ method: 'GET' }).handler(async () => {
-  const url = process.env['SUPABASE_URL']; const key = process.env['SUPABASE_PUBLISHABLE_KEY'];
+  const url = import.meta.env.VITE_SUPABASE_URL || process.env['SUPABASE_URL'];
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env['SUPABASE_PUBLISHABLE_KEY'];
   if (!url || !key) throw new Error('Property service unavailable');
   const client = createClient<Database>(url,key,{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:(input,init)=>{
     const headers=new Headers(init?.headers); if(key.startsWith('sb_') && headers.get('Authorization')===`Bearer ${key}`) headers.delete('Authorization'); headers.set('apikey',key); return fetch(input,{...init,headers});
