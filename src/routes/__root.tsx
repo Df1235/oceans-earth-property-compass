@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Header, Footer, WhatsAppFab } from "../components/SiteChrome";
+import { AiChat } from "../components/AiChat";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -130,6 +131,7 @@ function RootComponent() {
       </main>
       {!bare && <Footer />}
       {!bare && <WhatsAppFab />}
+      {!bare && <AiChat />}
     </QueryClientProvider>
   );
 }

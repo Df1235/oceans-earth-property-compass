@@ -92,9 +92,9 @@ export function Footer() {
         <div>
           <p className="eyebrow opacity-60">Reach us</p>
           <ul className="mt-4 space-y-3 text-sm">
-            <li className="flex gap-2"><Phone className="h-4 w-4 shrink-0" /> <a href={`tel:${SITE.phoneRaw}`}>{SITE.phone}</a></li>
-            <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0" /> <a href={`mailto:${SITE.email}`} className="break-all">{SITE.email}</a></li>
-            <li className="flex gap-2"><MapPin className="h-4 w-4 shrink-0" /> <span>{SITE.address.join(" ")}</span></li>
+            <li className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0" /> <a href={`tel:${SITE.phoneRaw}`}>{SITE.phone}</a></li>
+            <li className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0" /> <a href={`mailto:${SITE.email}`} className="min-w-0 break-words hover:underline">{SITE.email}</a></li>
+            <li className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /> <span>{SITE.address.join(" ")}</span></li>
           </ul>
         </div>
       </div>
