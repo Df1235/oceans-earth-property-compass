@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LeadForm } from "@/components/LeadForm";
 import { KnowYourSpace } from "@/components/KnowYourSpace";
 import { SectionHead } from "@/components/SectionHead";
 import { HERO_SLIDES, SITE } from "@/lib/site";
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { catalogueOptions } from '@/lib/catalogue';
 import iconWhite from "@/assets/icon-white.png";
 import interior from "@/assets/interior.jpg";
@@ -14,8 +14,7 @@ import heroCommercial from "@/assets/hero-commercial.jpg";
 import plots from "@/assets/plots.jpg";
 
 export const Route = createFileRoute("/")({
-  // Added .catch() so a Supabase 500 error doesn't crash the entire routing pipeline
-  loader: ({ context }) => context.queryClient.ensureQueryData(catalogueOptions).catch(() => null),
+  loader:({context})=>context.queryClient.ensureQueryData(catalogueOptions),
   head: () => ({
     meta: [
       { title: "Oceans & Earth Realty — Homes, Commercial & Plots in Delhi NCR" },
@@ -94,12 +93,7 @@ const CATS = [
 ] as const;
 
 function Index() {
-  // Swapped useSuspenseQuery for useQuery to safely extract data without crashing
-  const { data, isLoading, isError } = useQuery(catalogueOptions);
-  
-  // Safely fallback to an empty array if data is missing or undefined
-  const PROJECTS = data?.featured || [];
-
+  const {data:{featured:PROJECTS}}=useSuspenseQuery(catalogueOptions);
   return (
     <>
       <HeroSlider />
@@ -140,30 +134,17 @@ function Index() {
           <SectionHead eyebrow="Current projects" title="Featured with us now" />
           <Link to="/properties" className="eyebrow border-b border-primary pb-1 text-primary">View all properties</Link>
         </div>
-        
-        {/* Graceful error and loading states added here */}
         <div className="mt-12 grid gap-8 md:grid-cols-3">
-          {isLoading ? (
-            <div className="col-span-full flex py-12 items-center justify-center text-muted-foreground">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              <span>Loading featured projects...</span>
-            </div>
-          ) : isError || PROJECTS.length === 0 ? (
-            <div className="col-span-full rounded-md border border-dashed py-12 text-center text-muted-foreground">
-              <p>No featured projects available right now.</p>
-            </div>
-          ) : (
-            PROJECTS.map((p: any) => (
-              <Link key={p.slug} to="/projects/$slug" params={{ slug: p.slug }} className="group block">
-                <div className="aspect-[4/5] overflow-hidden rounded-md">
-                  <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                </div>
-                <p className="eyebrow mt-5 text-[0.6rem] text-muted-foreground">{p.category} · {p.status}</p>
-                <h3 className="mt-2 text-2xl">{p.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{p.location} — <span className="font-semibold text-primary">{p.price}</span></p>
-              </Link>
-            ))
-          )}
+          {PROJECTS.map((p) => (
+            <Link key={p.slug} to="/projects/$slug" params={{ slug: p.slug }} className="group block">
+              <div className="aspect-[4/5] overflow-hidden rounded-md">
+                <img src={p.image} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              </div>
+              <p className="eyebrow mt-5 text-[0.6rem] text-muted-foreground">{p.category} · {p.status}</p>
+              <h3 className="mt-2 text-2xl">{p.name}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{p.location} — <span className="font-semibold text-primary">{p.price}</span></p>
+            </Link>
+          ))}
         </div>
       </section>
 
