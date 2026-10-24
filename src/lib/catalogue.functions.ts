@@ -23,7 +23,7 @@ export const getCatalogue = createServerFn({ method: 'GET' }).handler(async () =
     }
     return {...row,image};
   }));
-  const listings:Listing[]=rows.map(r=>({id:r.id,title:r.title,category:r.category as Listing['category'],type:r.type as Listing['type'],propertyType:r.property_type,location:r.location,price:r.price,beds:r.beds ?? undefined,area:r.area,image:r.image,projectSlug:r.slug}));
+  const listings:Listing[]=rows.map(r=>({id:r.id,title:r.title,category:r.category as Listing['category'],type:r.type as Listing['type'],propertyType:r.property_type,location:r.location,price:r.price,...(r.beds!=null?{beds:r.beds}:{}),area:r.area,image:r.image,projectSlug:r.slug}));
   const projects:(Project & {brochureUrl:string})[]=rows.map(r=>({slug:r.slug,name:r.title,category:r.category as Project['category'],type:r.type as Project['type'],location:r.location,price:r.price,config:r.config || r.area,status:r.status,image:r.image,summary:r.summary,highlights:r.highlights,brochureUrl:r.brochure_url}));
   return { listings,projects,featured:projects.filter(p=>rows.find(r=>r.slug===p.slug)?.featured) };
 });
