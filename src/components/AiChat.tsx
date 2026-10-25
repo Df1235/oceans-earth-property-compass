@@ -1,184 +1,62 @@
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { Bot, Send, Sparkles, X } from "lucide-react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { MessageCircle, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { askFaq } from "@/lib/faq.functions";
-import { faqFallback } from "@/lib/faq";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
+import { Reasoning, ReasoningTrigger, ReasoningContent } from "@/components/ai-elements/reasoning";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import brandIcon from "@/assets/icon-white.png";
 
-type Message = { id: number; from: "bot" | "user"; text: string };
-
-const ASSISTANT_NAME = "Ask Oceans & Earth";
-const GREETING =
-  "Hi! I'm the Oceans & Earth assistant. Ask me about areas we cover, property types, site visits, home loans and more.";
-const SUGGESTIONS = [
-  "Which areas do you cover?",
-  "Book a site visit",
-  "Do you help with home loans?",
-  "RERA details",
-  "How do I get started?",
-];
-
-let nextId = 0;
-const makeId = () => ++nextId;
+const transport = new DefaultChatTransport({ api: "/api/public/chat" });
+const suggestions = ["Find a home in Noida", "Compare commercial properties", "What is carpet area?"];
 
 export function AiChat() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { id: makeId(), from: "bot", text: GREETING },
-  ]);
   const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(true);
-
-  const ask = useServerFn(askFaq);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const logRef = useRef<HTMLDivElement>(null);
-  const busyRef = useRef(false);
-
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const { messages, sendMessage, status, error, stop, setMessages, clearError } = useChat({ transport });
+  const busy = status === "submitted" || status === "streaming";
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
+    if (open) textarea.current?.focus();
+  }, [open, status]);
 
-  useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [messages, typing]);
-
-  async function sendMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || busyRef.current) return;
-    busyRef.current = true;
-    setShowSuggestions(false);
-    setMessages((m) => [...m, { id: makeId(), from: "user", text: trimmed }]);
+  function send(text: string) {
+    if (busy || !text.trim()) return;
+    clearError();
     setInput("");
-    setTyping(true);
-    // Artificial thinking delay so replies feel conversational (respects reduced motion via CSS only).
-    const delay = 500 + Math.floor(Math.random() * 400);
-    try {
-      const [reply] = await Promise.all([
-        ask({ data: { message: trimmed } }),
-        new Promise((r) => setTimeout(r, delay)),
-      ]);
-      setMessages((m) => [...m, { id: makeId(), from: "bot", text: reply.answer }]);
-    } catch {
-      setMessages((m) => [...m, { id: makeId(), from: "bot", text: faqFallback() }]);
-    } finally {
-      setTyping(false);
-      busyRef.current = false;
-      inputRef.current?.focus();
-    }
+    void sendMessage({ text: text.trim() });
+    textarea.current?.focus();
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    void sendMessage(input);
-  }
-
-  return (
-    <>
-      {!open && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Ask Oceans & Earth — AI assistant"
-          className="fixed bottom-24 right-6 z-50 flex items-center justify-center rounded-full bg-primary p-4 text-primary-foreground shadow-soft transition-transform hover:scale-105 motion-reduce:transition-none"
-        >
-          <Bot className="h-6 w-6" />
-        </button>
-      )}
-
-      {open && (
-        <div
-          role="dialog"
-          aria-label={ASSISTANT_NAME}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setOpen(false);
-          }}
-          className="fixed bottom-24 right-4 left-4 z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-md border bg-card text-card-foreground shadow-soft sm:left-auto sm:right-6 sm:w-[min(22rem,calc(100vw-3rem))]"
-        >
-          <div className="flex items-center justify-between gap-3 border-b bg-primary px-4 py-3 text-primary-foreground">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              <div>
-                <p className="eyebrow opacity-80">AI assistant</p>
-                <p className="text-sm font-semibold leading-tight">{ASSISTANT_NAME}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-              className="rounded-sm p-1 transition-opacity hover:opacity-70 motion-reduce:transition-none"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div
-            ref={logRef}
-            role="log"
-            aria-live="polite"
-            className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
-          >
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={
-                  m.from === "user"
-                    ? "ml-auto max-w-[85%] rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
-                    : "mr-auto max-w-[85%] rounded-md bg-muted px-3 py-2 text-sm text-foreground"
-                }
-              >
-                {m.text}
-              </div>
-            ))}
-
-            {typing && (
-              <div
-                className="mr-auto flex max-w-[85%] items-center gap-1 rounded-md bg-muted px-3 py-2"
-                aria-label="Assistant is typing"
-              >
-                <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s] motion-reduce:animate-none" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s] motion-reduce:animate-none" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground motion-reduce:animate-none" />
-              </div>
-            )}
-
-            {showSuggestions && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => void sendMessage(s)}
-                    className="eyebrow rounded-full border px-3 py-1 text-foreground transition-colors hover:bg-accent hover:text-accent-foreground motion-reduce:transition-none"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t px-3 py-3">
-            <Label htmlFor="ai-chat-input" className="sr-only">
-              Type your question
-            </Label>
-            <Input
-              id="ai-chat-input"
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your question…"
-              autoComplete="off"
-            />
-            <Button type="submit" size="icon" aria-label="Send message" disabled={!input.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
-      )}
-    </>
-  );
+  return <>
+    {!open && <Button size="icon" onClick={() => setOpen(true)} aria-label="Ask Oceans & Earth — AI assistant" title="Ask Oceans & Earth" className="fixed bottom-24 right-6 z-50 h-14 w-14 rounded-full shadow-soft"><MessageCircle className="h-6 w-6" /></Button>}
+    {open && <div role="dialog" aria-label="Ask Oceans & Earth" onKeyDown={e => { if (e.key === "Escape") setOpen(false); }} className="fixed bottom-24 left-4 right-4 z-50 flex h-[min(36rem,calc(100dvh-8rem))] min-h-0 flex-col overflow-hidden rounded-md border bg-card text-card-foreground shadow-soft sm:left-auto sm:right-6 sm:w-[25rem]">
+      <div className="flex shrink-0 items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
+        <img src={brandIcon} alt="" className="h-9 w-9 object-contain" />
+        <div className="min-w-0 flex-1"><p className="text-sm font-semibold">Ask Oceans & Earth</p><p className="text-xs opacity-80">Property assistant</p></div>
+        <Button size="icon" variant="ghost" disabled={busy} aria-label="New chat" title="New chat" onClick={() => { setMessages([]); clearError(); textarea.current?.focus(); }} className="shrink-0 text-primary-foreground"><RotateCcw /></Button>
+        <Button size="icon" variant="ghost" aria-label="Close chat" title="Close chat" onClick={() => setOpen(false)} className="shrink-0 text-primary-foreground"><X /></Button>
+      </div>
+      <Conversation className="min-h-0 flex-1" aria-live="polite">
+        <ConversationContent className="gap-5 p-4">
+          {messages.length === 0 && <Message from="assistant"><MessageContent><MessageResponse>{"Hello! What kind of property are you looking for? Tell me your preferred location and budget."}</MessageResponse><div className="mt-3 flex flex-col items-start gap-2">{suggestions.map(s => <Button key={s} variant="outline" size="sm" onClick={() => send(s)} className="h-auto whitespace-normal text-left">{s}</Button>)}</div></MessageContent></Message>}
+          {messages.map((m, index) => <Message key={m.id} from={m.role}><MessageContent className={m.role === "user" ? "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground" : "w-full"}>
+            {m.parts.map((part, i) => part.type === "text" ? <MessageResponse key={i} isAnimating={busy && index === messages.length - 1} className="break-words [&_a]:underline">{part.text}</MessageResponse> : part.type === "reasoning" ? <Reasoning key={i} defaultOpen={false} isStreaming={busy && index === messages.length - 1}><ReasoningTrigger /><ReasoningContent>{part.text}</ReasoningContent></Reasoning> : null)}
+          </MessageContent></Message>)}
+          {busy && !messages.at(-1)?.parts.some(p => p.type === "text" && p.text) && <Shimmer className="text-sm">Thinking…</Shimmer>}
+          {error && <p role="alert" className="break-words text-sm text-destructive">{error.message}</p>}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+      <div className="shrink-0 border-t p-3">
+        <PromptInput onSubmit={({ text }) => send(text)}>
+          <PromptInputTextarea ref={textarea} value={input} onChange={e => setInput(e.target.value)} aria-label="Type your question" placeholder="Ask about properties or buying…" maxLength={5000} className="min-h-16 max-h-32" />
+          <PromptInputFooter className="justify-end"><PromptInputSubmit status={status} onStop={() => void stop()} disabled={!busy && !input.trim()} aria-label={busy ? "Stop response" : "Send message"} /></PromptInputFooter>
+        </PromptInput>
+      </div>
+    </div>}
+  </>;
 }

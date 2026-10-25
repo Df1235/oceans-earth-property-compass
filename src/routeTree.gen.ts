@@ -18,6 +18,7 @@ import { Route as PropertiesRouteImport } from './routes/properties'
 import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ProjectsSlugRouteImport } from './routes/projects.$slug'
+import { Route as ApiPublicChatRouteImport } from './routes/api/public/chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -63,6 +64,11 @@ const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
   path: '/projects/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicChatRoute = ApiPublicChatRouteImport.update({
+  id: '/api/public/chat',
+  path: '/api/public/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/tools': typeof ToolsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/api/public/chat': typeof ApiPublicChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/tools': typeof ToolsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/api/public/chat': typeof ApiPublicChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/tools': typeof ToolsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/api/public/chat': typeof ApiPublicChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/admin'
     | '/projects/$slug'
+    | '/api/public/chat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/admin'
     | '/projects/$slug'
+    | '/api/public/chat'
   id:
     | '__root__'
     | '/'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/_authenticated/admin'
     | '/projects/$slug'
+    | '/api/public/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   PropertiesRoute: typeof PropertiesRoute
   ToolsRoute: typeof ToolsRoute
   ProjectsSlugRoute: typeof ProjectsSlugRoute
+  ApiPublicChatRoute: typeof ApiPublicChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -206,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/chat': {
+      id: '/api/public/chat'
+      path: '/api/public/chat'
+      fullPath: '/api/public/chat'
+      preLoaderRoute: typeof ApiPublicChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   PropertiesRoute: PropertiesRoute,
   ToolsRoute: ToolsRoute,
   ProjectsSlugRoute: ProjectsSlugRoute,
+  ApiPublicChatRoute: ApiPublicChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
