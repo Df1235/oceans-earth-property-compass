@@ -3,3 +3,6 @@
 - [ ] Add secured administrator sign-in and enquiry/property management.
 - [ ] Connect public property/project screens to managed properties.
 - [ ] Verify submissions, admin access and property add/remove.
+- [ ] Replace FAQ bot with a live LLM assistant using one session-only conversation.
+- [ ] Serve current listing photos from bundled project images without restoring removed listings.
+- [ ] Verify assistant replies, follow-up context and listing photos.
