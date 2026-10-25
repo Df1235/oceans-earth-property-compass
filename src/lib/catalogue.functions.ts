@@ -1,18 +1,13 @@
 import { createServerFn } from '@tanstack/react-start';
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import type { Database } from '@/integrations/supabase/types';
 import type { Listing, Project } from './site';
 import { leadSchema, propertySchema } from './forms';
+import { resolvePropertyImage } from './property-images';
 
 export const getCatalogue = createServerFn({ method: 'GET' }).handler(async () => {
-  const url = import.meta.env.VITE_SUPABASE_URL || process.env['SUPABASE_URL'];
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env['SUPABASE_PUBLISHABLE_KEY'];
-  if (!url || !key) throw new Error('Property service unavailable');
-  const client = createClient<Database>(url,key,{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:(input,init)=>{
-    const headers=new Headers(init?.headers); if(key.startsWith('sb_') && headers.get('Authorization')===`Bearer ${key}`) headers.delete('Authorization'); headers.set('apikey',key); return fetch(input,{...init,headers});
-  }}});
+  const { createPublicPropertyClient } = await import('./public-properties.server');
+  const client = createPublicPropertyClient();
   const {data,error}=await client.from('properties').select('*').order('created_at');
   if(error) throw new Error('Unable to load properties');
   const rows=await Promise.all((data ?? []).map(async row=>{
@@ -22,7 +17,7 @@ export const getCatalogue = createServerFn({ method: 'GET' }).handler(async () =
       if(signed.error) throw new Error('Unable to load property photo');
       image=signed.data.signedUrl;
     }
-    return {...row,image};
+    return {...row,image:resolvePropertyImage(image)};
   }));
   const listings:Listing[]=rows.map(r=>({id:r.id,title:r.title,category:r.category as Listing['category'],type:r.type as Listing['type'],propertyType:r.property_type,location:r.location,price:r.price,...(r.beds!=null?{beds:r.beds}:{}),area:r.area,image:r.image,projectSlug:r.slug}));
   const projects:(Project & {brochureUrl:string})[]=rows.map(r=>({slug:r.slug,name:r.title,category:r.category as Project['category'],type:r.type as Project['type'],location:r.location,price:r.price,config:r.config || r.area,status:r.status,image:r.image,summary:r.summary,highlights:r.highlights,brochureUrl:r.brochure_url}));
