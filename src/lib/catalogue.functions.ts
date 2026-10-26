@@ -35,7 +35,10 @@ export const submitEnquiry=createServerFn({method:'POST'}).inputValidator(input=
 export const getAdminData=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
   const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
   if(role.error || !role.data) return {authorized:false as const,enquiries:[],properties:[]};
-  const [enquiries,properties]=await Promise.all([context.supabase.from('enquiries').select('*').order('created_at',{ascending:false}).limit(500),context.supabase.from('properties').select('*').order('created_at',{ascending:false})]);
+  // Read with the service-role client (admin verified above) so RLS auth.uid()
+  // resolution under the sb_publishable_ key scheme can't hide enquiry rows.
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+  const [enquiries,properties]=await Promise.all([supabaseAdmin.from('enquiries').select('*').order('created_at',{ascending:false}).limit(500),supabaseAdmin.from('properties').select('*').order('created_at',{ascending:false})]);
   if(enquiries.error || properties.error) throw new Error('Unable to load management data');
   return {authorized:true as const,enquiries:enquiries.data,properties:properties.data};
 });
@@ -46,9 +49,12 @@ export const addProperty=createServerFn({method:'POST'}).middleware([requireSupa
     console.error('[addProperty] has_role failed', {userId:context.userId, roleError:role.error, roleData:role.data});
     throw new Error('Administrator access required');
   }
-  const {error}=await context.supabase.from('properties').insert(data);
+  // Admin verified above via has_role(context.userId). Perform the write with the
+  // service-role client to avoid RLS auth.uid() resolving to anon under the new
+  // sb_publishable_ key scheme (which caused 42501 on authenticated inserts).
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+  const {error}=await supabaseAdmin.from('properties').insert(data);
   if(error){
-    // Surface the real Postgres/Supabase error so admin failures are diagnosable.
     console.error('[addProperty] insert failed', {code:error.code, message:error.message, details:error.details, hint:error.hint});
     throw new Error(error.code==='23505'?'This property address already exists. Change the slug.':`Unable to add property: ${error.message}${error.code?` [${error.code}]`:''}`);
   }
@@ -57,7 +63,8 @@ export const addProperty=createServerFn({method:'POST'}).middleware([requireSupa
 export const removeProperty=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>z.object({id:z.string().uuid()}).parse(input)).handler(async({data,context})=>{
   const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
   if(role.error || !role.data) throw new Error('Administrator access required');
-  const {error}=await context.supabase.from('properties').delete().eq('id',data.id);
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+  const {error}=await supabaseAdmin.from('properties').delete().eq('id',data.id);
   if(error) throw new Error('Unable to remove property');
   return {success:true};
 });
@@ -74,7 +81,8 @@ export const getBrochure=createServerFn({method:'POST'}).inputValidator(input=>z
 export const updateProperty=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>z.object({id:z.string().uuid(),property:propertySchema}).parse(input)).handler(async({data,context})=>{
   const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
   if(role.error || !role.data) throw new Error('Administrator access required');
-  const {error}=await context.supabase.from('properties').update(data.property).eq('id',data.id);
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
+  const {error}=await supabaseAdmin.from('properties').update(data.property).eq('id',data.id);
   if(error) throw new Error(error.code==='23505'?'This property address already exists. Change the slug.':'Unable to save changes');
   return {success:true};
 });
