@@ -42,9 +42,16 @@ export const getAdminData=createServerFn({method:'GET'}).middleware([requireSupa
 
 export const addProperty=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>propertySchema.parse(input)).handler(async({data,context})=>{
   const role=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});
-  if(role.error || !role.data) throw new Error('Administrator access required');
+  if(role.error || !role.data){
+    console.error('[addProperty] has_role failed', {userId:context.userId, roleError:role.error, roleData:role.data});
+    throw new Error('Administrator access required');
+  }
   const {error}=await context.supabase.from('properties').insert(data);
-  if(error) throw new Error(error.code==='23505'?'This property address already exists. Change the slug.':'Unable to add property');
+  if(error){
+    // Surface the real Postgres/Supabase error so admin failures are diagnosable.
+    console.error('[addProperty] insert failed', {code:error.code, message:error.message, details:error.details, hint:error.hint});
+    throw new Error(error.code==='23505'?'This property address already exists. Change the slug.':`Unable to add property: ${error.message}${error.code?` [${error.code}]`:''}`);
+  }
   return {success:true};
 });
 export const removeProperty=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>z.object({id:z.string().uuid()}).parse(input)).handler(async({data,context})=>{
