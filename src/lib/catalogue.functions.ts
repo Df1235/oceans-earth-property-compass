@@ -28,7 +28,10 @@ export const submitEnquiry=createServerFn({method:'POST'}).inputValidator(input=
   const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
   // Guest enquiries are intentional. No private rows or caller-selected ownership are returned.
   const {error}=await supabaseAdmin.from('enquiries').insert({...data,city:data.city ?? ''});
-  if(error) throw new Error('Your enquiry could not be saved. Please try again.');
+  if(error){
+    console.error('[submitEnquiry] insert failed', {code:error.code, message:error.message, details:error.details, hint:error.hint});
+    throw new Error(`Your enquiry could not be saved: ${error.message}${error.code?` [${error.code}]`:''}`);
+  }
   return {success:true};
 });
 
