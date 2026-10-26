@@ -110,7 +110,7 @@ export const getAiSettings=createServerFn({method:'GET'}).middleware([requireSup
   const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
   const {data}=await supabaseAdmin.from('ai_settings').select('gemini_api_key,gemini_model,updated_at').eq('id',true).maybeSingle();
   const k=data?.gemini_api_key ?? '';
-  return {hasKey:!!k,keyEnding:k?k.slice(-4):'',model:data?.gemini_model ?? 'gemini-2.5-flash-lite',updatedAt:data?.updated_at ?? null};
+  return {hasKey:!!k,keyEnding:k?k.slice(-4):'',model:data?.gemini_model ?? 'gemini-3.5-flash-lite',updatedAt:data?.updated_at ?? null};
 });
 export const saveAiSettings=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator(input=>aiSettingsSchema.parse(input)).handler(async({data,context})=>{
   await requireAdmin(context);

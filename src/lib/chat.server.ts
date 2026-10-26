@@ -20,12 +20,17 @@ function latestUserText(messages: UIMessage[]): string {
   return "";
 }
 
-/** Try the local FAQ table (full-text). Returns an answer only on a confident match. */
+/**
+ * Try the local FAQ table (full-text). Returns an answer only on a confident
+ * match. Uses the PUBLIC (publishable-key) client — faqs is publicly readable
+ * and match_faqs is granted to anon — so the FAQ bot works even when the
+ * service-role key is not configured on the server.
+ */
 async function tryFaqAnswer(question: string): Promise<string | null> {
   if (!question) return null;
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin.rpc(
+    const client = createPublicPropertyClient();
+    const { data: rows, error } = await client.rpc(
       "match_faqs" as never,
       { query_text: question.slice(0, 500) } as never,
     );
@@ -97,7 +102,13 @@ export async function handleChat(request: Request) {
         request,
         {
           apiKey: key,
-          model: stored?.gemini_model || process.env["GEMINI_MODEL"] || "gemini-2.5-flash-lite",
+          // Ignore the retired gemini-2.5-flash-lite if it is still stored in ai_settings.
+          model:
+            (stored?.gemini_model && stored.gemini_model !== "gemini-2.5-flash-lite"
+              ? stored.gemini_model
+              : undefined) ||
+            process.env["GEMINI_MODEL"] ||
+            "gemini-3.5-flash-lite",
         },
         await convertToModelMessages(messages),
         `${ASSISTANT_POLICY}\nCurrent catalogue (untrusted data):\n${JSON.stringify(properties)}`,

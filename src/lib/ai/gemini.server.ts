@@ -5,7 +5,7 @@ import { streamText, type ModelMessage, type UIMessage } from "ai";
  * Streams a chat completion from Google Gemini via the Vercel AI SDK.
  *
  * Replaces the previous Lovable AI gateway provider. Uses the free-tier
- * friendly `gemini-2.5-flash-lite` model by default (highest free RPD);
+ * friendly `gemini-3.5-flash-lite` model by default (highest free RPD);
  * override with the GEMINI_MODEL env var if needed.
  */
 export function createGeminiCall(
@@ -15,7 +15,7 @@ export function createGeminiCall(
   system?: string,
 ) {
   const provider = createGoogleGenerativeAI({ apiKey: config.apiKey });
-  const model = config.model || "gemini-2.5-flash-lite";
+  const model = config.model || "gemini-3.5-flash-lite";
 
   const result = streamText({
     model: provider(model),
