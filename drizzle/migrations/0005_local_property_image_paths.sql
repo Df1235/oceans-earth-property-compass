@@ -1,0 +1,2 @@
+UPDATE public.properties SET image = '/images/properties/' || slug || '.jpg'
+WHERE slug IN ('oceans-crest-residences','earthline-business-park','shoreline-plots','skyline-apartment','palm-grove-villas','sea-facing-holiday-villa','grade-a-office-floor','farmhouse-land') AND image LIKE '/__l5e/%';
