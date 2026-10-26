@@ -1,4 +1,5 @@
-CREATE TABLE public.faqs (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz NOT NULL DEFAULT now(), question text NOT NULL, answer text NOT NULL, keywords text[] NOT NULL DEFAULT '{}', category text NOT NULL DEFAULT '', priority int NOT NULL DEFAULT 0, active boolean NOT NULL DEFAULT true, search tsvector GENERATED ALWAYS AS (to_tsvector('english', question || ' ' || coalesce(array_to_string(keywords, ' '), ''))) STORED);
+CREATE FUNCTION public.faq_keywords_text(k text[]) RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public AS $$ SELECT array_to_string(k, ' ') $$;
+CREATE TABLE public.faqs (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), created_at timestamptz NOT NULL DEFAULT now(), question text NOT NULL, answer text NOT NULL, keywords text[] NOT NULL DEFAULT '{}', category text NOT NULL DEFAULT '', priority int NOT NULL DEFAULT 0, active boolean NOT NULL DEFAULT true, search tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, question || ' ' || coalesce(public.faq_keywords_text(keywords), ''))) STORED);
 CREATE INDEX faqs_search_idx ON public.faqs USING gin (search);
 GRANT SELECT ON public.faqs TO anon, authenticated;
 GRANT ALL ON public.faqs TO service_role;

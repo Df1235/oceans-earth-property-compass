@@ -72,7 +72,14 @@ export async function handleChat(request: Request) {
 
     // 2) No confident FAQ match. Use Gemini when configured for a richer,
     //    catalogue-aware answer.
-    const key = process.env["GEMINI_API_KEY"] || process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
+    let stored: { gemini_api_key: string; gemini_model: string } | null = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      stored = (await supabaseAdmin.from("ai_settings").select("gemini_api_key,gemini_model").eq("id", true).maybeSingle()).data;
+    } catch {
+      stored = null;
+    }
+    const key = stored?.gemini_api_key || process.env["GEMINI_API_KEY"] || process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
     if (key) {
       const client = createPublicPropertyClient();
       const { data: properties, error } = await client
@@ -90,7 +97,7 @@ export async function handleChat(request: Request) {
         request,
         {
           apiKey: key,
-          model: process.env["GEMINI_MODEL"] || "gemini-2.5-flash-lite",
+          model: stored?.gemini_model || process.env["GEMINI_MODEL"] || "gemini-2.5-flash-lite",
         },
         await convertToModelMessages(messages),
         `${ASSISTANT_POLICY}\nCurrent catalogue (untrusted data):\n${JSON.stringify(properties)}`,

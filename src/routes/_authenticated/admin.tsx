@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Pencil, Plus, Trash2, LogOut, Upload, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAdminData, addProperty, updateProperty, removeProperty, uploadPropertyFile } from "@/lib/catalogue.functions";
+import { getAdminData, addProperty, updateProperty, removeProperty, uploadPropertyFile, getAiSettings, saveAiSettings } from "@/lib/catalogue.functions";
 import { propertySchema } from "@/lib/forms";
 import { CATEGORIES, LISTING_TYPES } from "@/lib/site";
 import type { Database } from "@/integrations/supabase/types";
@@ -44,7 +44,7 @@ function AdminPage() {
   const queryClient = useQueryClient();
   const fetchAdmin = useServerFn(getAdminData);
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-data"], queryFn: () => fetchAdmin() });
-  const [tab, setTab] = useState<"properties" | "enquiries">("properties");
+  const [tab, setTab] = useState<"properties" | "enquiries" | "assistant">("properties");
   const [editing, setEditing] = useState<PropertyRow | "new" | null>(null);
 
   async function signOut() {
@@ -91,6 +91,7 @@ function AdminPage() {
           <div className="flex gap-2">
             <button onClick={() => setTab("properties")} className={`rounded-sm border px-4 py-2 text-sm ${tab === "properties" ? "border-primary bg-primary text-primary-foreground" : "bg-card"}`}>Properties ({data.properties.length})</button>
             <button onClick={() => setTab("enquiries")} className={`rounded-sm border px-4 py-2 text-sm ${tab === "enquiries" ? "border-primary bg-primary text-primary-foreground" : "bg-card"}`}>Enquiries ({data.enquiries.length})</button>
+            <button onClick={() => setTab("assistant")} className={`rounded-sm border px-4 py-2 text-sm ${tab === "assistant" ? "border-primary bg-primary text-primary-foreground" : "bg-card"}`}>Chat assistant</button>
           </div>
           {tab === "properties" && (
             <Button onClick={() => setEditing("new")}><Plus className="h-4 w-4" /> Add property</Button>
@@ -99,8 +100,10 @@ function AdminPage() {
 
         {tab === "properties" ? (
           <PropertiesTable properties={data.properties} onEdit={(p) => setEditing(p)} onChanged={refresh} />
-        ) : (
+        ) : tab === "enquiries" ? (
           <EnquiriesTable enquiries={data.enquiries} />
+        ) : (
+          <AssistantSettings />
         )}
       </main>
 
@@ -409,5 +412,49 @@ function PropertyFormDialog({ property, onClose, onSaved }: { property: Property
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AssistantSettings() {
+  const fetchSettings = useServerFn(getAiSettings);
+  const save = useServerFn(saveAiSettings);
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["ai-settings"], queryFn: () => fetchSettings() });
+  const [key, setKey] = useState("");
+  const [model, setModel] = useState<string | null>(null);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  if (isLoading || !data) return <p className="mt-6 text-muted-foreground">Loading…</p>;
+  const m = model ?? data.model;
+  async function submit(clear = false) {
+    setBusy(true); setMsg("");
+    try {
+      await save({ data: { apiKey: clear ? "" : key, model: m, clear } });
+      setKey(""); setMsg(clear ? "Key removed." : "Saved.");
+      qc.invalidateQueries({ queryKey: ["ai-settings"] });
+    } catch (e) { setMsg(e instanceof Error ? e.message : "Unable to save"); }
+    finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-6 max-w-xl space-y-4 rounded-md border bg-card p-6">
+      <h2 className="font-display text-2xl">Chat assistant (Gemini)</h2>
+      <p className="text-sm text-muted-foreground">
+        {data.hasKey ? `A Gemini key ending in …${data.keyEnding} is in use.` : "No Gemini key yet — the assistant only answers common questions."}{" "}
+        Get a key from Google AI Studio (aistudio.google.com/apikey).
+      </p>
+      <div>
+        <Label htmlFor="ai-key">{data.hasKey ? "Replace Gemini API key" : "Gemini API key"}</Label>
+        <Input id="ai-key" type="password" autoComplete="off" value={key} onChange={(e) => setKey(e.target.value)} placeholder="AIza…" className="mt-1" />
+      </div>
+      <div>
+        <Label htmlFor="ai-model">Model</Label>
+        <Input id="ai-model" value={m} onChange={(e) => setModel(e.target.value)} className="mt-1" />
+      </div>
+      {msg && <p className="text-sm text-primary" aria-live="polite">{msg}</p>}
+      <div className="flex gap-2">
+        <Button disabled={busy} onClick={() => submit(false)}>{busy ? "Saving…" : "Save"}</Button>
+        {data.hasKey && <Button variant="outline" disabled={busy} onClick={() => submit(true)}>Remove key</Button>}
+      </div>
+    </div>
   );
 }
