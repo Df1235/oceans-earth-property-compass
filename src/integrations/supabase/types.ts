@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_settings: {
+        Row: {
+          gemini_api_key: string
+          gemini_model: string
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          gemini_api_key?: string
+          gemini_model?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          gemini_api_key?: string
+          gemini_model?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       enquiries: {
         Row: {
           budget: string
@@ -47,6 +68,42 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+        }
+        Relationships: []
+      }
+      faqs: {
+        Row: {
+          active: boolean
+          answer: string
+          category: string
+          created_at: string
+          id: string
+          keywords: string[]
+          priority: number
+          question: string
+          search: unknown
+        }
+        Insert: {
+          active?: boolean
+          answer: string
+          category?: string
+          created_at?: string
+          id?: string
+          keywords?: string[]
+          priority?: number
+          question: string
+          search?: unknown
+        }
+        Update: {
+          active?: boolean
+          answer?: string
+          category?: string
+          created_at?: string
+          id?: string
+          keywords?: string[]
+          priority?: number
+          question?: string
+          search?: unknown
         }
         Relationships: []
       }
@@ -136,12 +193,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      faq_keywords_text: { Args: { k: string[] }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      match_faqs: {
+        Args: { query_text: string }
+        Returns: {
+          answer: string
+          rank: number
+        }[]
       }
     }
     Enums: {
