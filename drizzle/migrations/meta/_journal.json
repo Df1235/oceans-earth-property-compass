@@ -36,6 +36,13 @@
       "when": 1793014886982,
       "tag": "0004_ai_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793015454042,
+      "tag": "0005_local_property_image_paths",
+      "breakpoints": true
     }
   ]
 }
