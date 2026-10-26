@@ -20,12 +20,17 @@ function latestUserText(messages: UIMessage[]): string {
   return "";
 }
 
-/** Try the local FAQ table (full-text). Returns an answer only on a confident match. */
+/**
+ * Try the local FAQ table (full-text). Returns an answer only on a confident
+ * match. Uses the PUBLIC (publishable-key) client: the faqs table is publicly
+ * readable and match_faqs is granted to anon, so this needs no service-role
+ * key — the bot works with only the Supabase URL + publishable key.
+ */
 async function tryFaqAnswer(question: string): Promise<string | null> {
   if (!question) return null;
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin.rpc(
+    const client = createPublicPropertyClient();
+    const { data: rows, error } = await client.rpc(
       "match_faqs" as never,
       { query_text: question.slice(0, 500) } as never,
     );
