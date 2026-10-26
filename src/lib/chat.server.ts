@@ -46,6 +46,40 @@ async function tryFaqAnswer(question: string): Promise<string | null> {
   }
 }
 
+// Short-lived in-memory cache of the catalogue JSON. The catalogue is identical
+// for every chat request, so caching it removes one Supabase round-trip per
+// message (a major latency source) while staying fresh within ~60s.
+let catalogueCache: { json: string; at: number } | null = null;
+const CATALOGUE_TTL_MS = 60_000;
+
+async function getCatalogueJson(): Promise<string | null> {
+  if (catalogueCache && Date.now() - catalogueCache.at < CATALOGUE_TTL_MS) {
+    return catalogueCache.json;
+  }
+  const client = createPublicPropertyClient();
+  const { data, error } = await client
+    .from("properties")
+    .select(
+      "slug,title,category,type,property_type,location,price,beds,area,config,status,summary,highlights",
+    )
+    .order("created_at");
+  if (error) return null;
+  const json = JSON.stringify(data ?? []);
+  catalogueCache = { json, at: Date.now() };
+  return json;
+}
+
+async function getStoredAiSettings(): Promise<{ gemini_api_key: string; gemini_model: string } | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return (
+      await supabaseAdmin.from("ai_settings").select("gemini_api_key,gemini_model").eq("id", true).maybeSingle()
+    ).data;
+  } catch {
+    return null;
+  }
+}
+
 export async function handleChat(request: Request) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin)
@@ -76,28 +110,20 @@ export async function handleChat(request: Request) {
     if (faqAnswer) return respondWithText(faqAnswer);
 
     // 2) No confident FAQ match. Use Gemini when configured for a richer,
-    //    catalogue-aware answer.
-    let stored: { gemini_api_key: string; gemini_model: string } | null = null;
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      stored = (await supabaseAdmin.from("ai_settings").select("gemini_api_key,gemini_model").eq("id", true).maybeSingle()).data;
-    } catch {
-      stored = null;
-    }
+    //    catalogue-aware answer. Fetch settings + catalogue IN PARALLEL (they are
+    //    independent) and reuse the cached catalogue to cut latency.
+    const [stored, catalogueJson, modelMessages] = await Promise.all([
+      getStoredAiSettings(),
+      getCatalogueJson(),
+      convertToModelMessages(messages),
+    ]);
+    if (catalogueJson === null)
+      return Response.json(
+        { message: "The property catalogue is unavailable. Please try again later." },
+        { status: 503 },
+      );
     const key = stored?.gemini_api_key || process.env["GEMINI_API_KEY"] || process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
     if (key) {
-      const client = createPublicPropertyClient();
-      const { data: properties, error } = await client
-        .from("properties")
-        .select(
-          "slug,title,category,type,property_type,location,price,beds,area,config,status,summary,highlights",
-        )
-        .order("created_at");
-      if (error)
-        return Response.json(
-          { message: "The property catalogue is unavailable. Please try again later." },
-          { status: 503 },
-        );
       const call = createGeminiCall(
         request,
         {
@@ -110,8 +136,8 @@ export async function handleChat(request: Request) {
             process.env["GEMINI_MODEL"] ||
             "gemini-3.5-flash-lite",
         },
-        await convertToModelMessages(messages),
-        `${ASSISTANT_POLICY}\nCurrent catalogue (untrusted data):\n${JSON.stringify(properties)}`,
+        modelMessages,
+        `${ASSISTANT_POLICY}\nCurrent catalogue (untrusted data):\n${catalogueJson}`,
       );
       return await call.response(messages);
     }
